@@ -1,0 +1,480 @@
+================================================================================
+                    HOMIGO CARE - FIREBASE COMPLETE SETUP GUIDE
+================================================================================
+
+PROJECT NAME: Homigo Care
+FIREBASE PROJECT ID: (You will create this)
+DATABASE: Firebase Realtime Database (NOT Firestore)
+REGION: asia-south1 (Mumbai - closest to Pakistan)
+
+================================================================================
+SECTION 1: CREATE FIREBASE PROJECT
+================================================================================
+
+Step 1: Go to https://console.firebase.google.com/
+Step 2: Click "Create a project" or "Add project"
+Step 3: Project name: "Homigo Care"
+Step 4: Project ID: homigo-care-XXXXX (auto-generated, note this down)
+Step 5: Disable Google Analytics (not needed for now)
+Step 6: Click "Create Project"
+Step 7: Wait 30-60 seconds → Click "Continue"
+
+================================================================================
+SECTION 2: REGISTER ANDROID APP
+================================================================================
+
+Step 1: In Firebase Console → Click Android icon (</> logo)
+Step 2: Android package name: com.homigocare.app
+Step 3: App nickname: Homigo Care
+Step 4: SHA-1 fingerprint (optional for now, needed for Google Sign-In later)
+Step 5: Click "Register app"
+Step 6: Download "google-services.json"
+Step 7: Place this file at: HomigoCare/android/app/google-services.json
+
+Step 8: In your project's build.gradle (android/build.gradle):
+   Add inside dependencies:
+   
+   classpath 'com.google.gms:google-services:4.4.0'
+
+Step 9: In app/build.gradle (android/app/build.gradle):
+   Add at the bottom:
+   
+   apply plugin: 'com.google.gms.google-services'
+
+   Also make sure minSdkVersion is 21:
+   minSdkVersion 21
+
+Step 10: In HomigoCare/android/app/src/main/AndroidManifest.xml:
+   Add internet permission (if not present):
+   
+   <uses-permission android:name="android.permission.INTERNET"/>
+
+================================================================================
+SECTION 3: REGISTER iOS APP (Optional - For future)
+================================================================================
+
+Step 1: In Firebase Console → Click iOS icon
+Step 2: iOS bundle ID: com.homigocare.app
+Step 3: Download "GoogleService-Info.plist"
+Step 4: Place in: HomigoCare/ios/Runner/GoogleService-Info.plist
+
+================================================================================
+SECTION 4: ENABLE AUTHENTICATION
+================================================================================
+
+Step 1: Firebase Console → Build → Authentication → Get started
+Step 2: Sign-in method tab:
+
+   A) Email/Password:
+      - Click "Email/Password"
+      - Enable it
+      - Save
+
+   B) Google Sign-In:
+      - Click "Google"
+      - Enable it
+      - Support email: (your email)
+      - Project support email: (your email)
+      - Save
+
+Step 3: Settings tab → Authorized domains:
+   - Add your domain if needed (for web)
+   - localhost is auto-added for development
+
+================================================================================
+SECTION 5: REALTIME DATABASE - COMPLETE SETUP
+================================================================================
+
+Step 1: Firebase Console → Build → Realtime Database → Create database
+
+Step 2: Choose location: asia-south1 (Mumbai)
+   - This is closest to Pakistan
+   - Lowest latency
+
+Step 3: Security Rules (IMPORTANT!)
+
+   You have TWO modes:
+
+   =============================================
+   MODE 1: TESTING MODE (Development)
+   =============================================
+   
+   Use this while developing the app. Allows all reads/writes.
+   
+   {
+     "rules": {
+       ".read": true,
+       ".write": true
+     }
+   }
+   
+   WARNING: This allows ANYONE to read/write your database.
+   Only use during development. NEVER in production.
+   
+   How to enable:
+   - When you first create the database, Firebase asks:
+     "Start in locked mode or test mode?"
+   - Choose "Test mode"
+   - Rules will be: { "rules": { ".read": true, ".write": true } }
+   - Click "Enable"
+
+   =============================================
+   MODE 2: LOCKED MODE (Production)
+   =============================================
+   
+   This is the secure mode with proper rules.
+   
+   Use the rules from: real-time-database-security-rule.txt
+   
+   How to switch:
+   - Go to Realtime Database → Rules tab
+   - Paste the production rules
+   - Click "Publish"
+   
+   WARNING: Make sure your code is ready before switching.
+   If rules are too strict, app will stop working.
+
+Step 4: Database URL:
+   After creation, you'll get a URL like:
+   https://homigo-care-XXXXX-default-rtdb.firebaseio.com/
+   
+   Note this URL down - it's used in the app code.
+
+================================================================================
+SECTION 6: DATABASE STRUCTURE
+================================================================================
+
+Your Realtime Database will have this structure:
+
+homigo-care-XXXXX/
+├── users/
+│   ├── {uid_1}/
+│   │   ├── uid: "abc123"
+│   │   ├── email: "patient@email.com"
+│   │   ├── fullName: "Ahmed Khan"
+│   │   ├── phoneNumber: "+923001234567"
+│   │   ├── role: "patient"
+│   │   ├── profileImage: null
+│   │   ├── status: "active"
+│   │   ├── createdAt: "2024-01-15T10:30:00.000Z"
+│   │   └── updatedAt: "2024-01-15T10:30:00.000Z"
+│   │
+│   ├── {uid_2}/
+│   │   └── ... (doctor/nurse/lab user data)
+│   │
+│   └── {uid_admin}/
+│       └── role: "admin"
+│
+├── doctors/
+│   ├── {uid}/
+│   │   ├── uid: "doctor123"
+│   │   ├── fullName: "Dr. Sara Ali"
+│   │   ├── email: "sara@email.com"
+│   │   ├── phoneNumber: "+923001234567"
+│   │   ├── specialization: "Cardiologist"
+│   │   ├── experience: 8
+│   │   ├── consultationFee: 3000
+│   │   ├── bio: "Senior cardiologist..."
+│   │   ├── medicalCouncilReg: "PMC-12345"
+│   │   ├── availableDays: ["Monday", "Tuesday", "Wednesday"]
+│   │   ├── availableTimeFrom: "09:00"
+│   │   ├── availableTimeTo: "17:00"
+│   │   ├── isVerified: false
+│   │   ├── isAvailable: true
+│   │   ├── rating: 4.8
+│   │   ├── totalPatients: 150
+│   │   ├── status: "pending"  ← (pending → approved → rejected)
+│   │   ├── mcqScore: 85
+│   │   ├── mcqPassed: true
+│   │   ├── documents/
+│   │   │   ├── drivingLicense: "drive_file_id_xxx"
+│   │   │   ├── medicalDegree: "drive_file_id_yyy"
+│   │   │   └── nmcCertificate: "drive_file_id_zzz"
+│   │   ├── createdAt: "2024-01-15T10:30:00.000Z"
+│   │   └── updatedAt: "2024-01-15T10:30:00.000Z"
+│   │
+│   └── ... (other doctors)
+│
+├── nurses/
+│   ├── {uid}/
+│   │   ├── uid: "nurse123"
+│   │   ├── fullName: "Fatima Bibi"
+│   │   ├── email: "fatima@email.com"
+│   │   ├── phoneNumber: "+923007654321"
+│   │   ├── qualification: "BSN"
+│   │   ├── yearsOfExperience: 5
+│   │   ├── serviceAreas: ["DHA", "Gulshan", "Clifton"]
+│   │   ├── isAvailableForHome: true
+│   │   ├── isVerified: false
+│   │   ├── rating: 4.5
+│   │   ├── totalPatients: 80
+│   │   ├── status: "pending"
+│   │   ├── documents/
+│   │   │   ├── aghaKhanCert: "drive_file_id_xxx"
+│   │   │   └── drivingLicense: "drive_file_id_yyy"
+│   │   ├── createdAt: "2024-01-15T10:30:00.000Z"
+│   │   └── updatedAt: "2024-01-15T10:30:00.000Z"
+│   │
+│   └── ... (other nurses)
+│
+├── labs/
+│   ├── {uid}/
+│   │   ├── uid: "lab123"
+│   │   ├── labName: "City Diagnostic Lab"
+│   │   ├── ownerName: "Ali Khan"
+│   │   ├── email: "citylab@email.com"
+│   │   ├── phoneNumber: "+923001112233"
+│   │   ├── licenseNumber: "LAB-67890"
+│   │   ├── availableTests: ["Blood Test", "X-Ray", "MRI", "CT Scan"]
+│   │   ├── address: "Main Boulevard, Gulshan-e-Iqbal"
+│   │   ├── isVerified: false
+│   │   ├── isOpen: true
+│   │   ├── rating: 4.2
+│   │   ├── totalTests: 500
+│   │   ├── status: "pending"
+│   │   ├── documents/
+│   │   │   ├── nabeelLabCert: "drive_file_id_xxx"
+│   │   │   └── labLicense: "drive_file_id_yyy"
+│   │   ├── createdAt: "2024-01-15T10:30:00.000Z"
+│   │   └── updatedAt: "2024-01-15T10:30:00.000Z"
+│   │
+│   └── ... (other labs)
+│
+├── bookings/
+│   ├── {bookingId_1}/
+│   │   ├── bookingId: "booking_abc123"
+│   │   ├── patientId: "patient_uid"
+│   │   ├── patientName: "Ahmed Khan"
+│   │   ├── providerId: "doctor_uid"
+│   │   ├── providerName: "Dr. Sara Ali"
+│   │   ├── providerType: "doctor"
+│   │   ├── specialization: "Cardiologist"
+│   │   ├── date: "2024-02-15T00:00:00.000Z"
+│   │   ├── timeSlot: "10:00 - 10:30"
+│   │   ├── status: "pending"
+│   │   ├── reason: "Chest pain"
+│   │   ├── notes: null
+│   │   ├── fee: 3000
+│   │   ├── paymentStatus: "unpaid"
+│   │   ├── createdAt: "2024-01-15T10:30:00.000Z"
+│   │   └── updatedAt: "2024-01-15T10:30:00.000Z"
+│   │
+│   └── ... (other bookings)
+│
+├── chats/
+│   ├── {chatId_1}/
+│   │   ├── chatId: "chat_abc123"
+│   │   ├── patientId: "patient_uid"
+│   │   ├── patientName: "Ahmed Khan"
+│   │   ├── providerId: "doctor_uid"
+│   │   ├── providerName: "Dr. Sara Ali"
+│   │   ├── providerType: "doctor"
+│   │   ├── lastMessage: "Take medicines on time"
+│   │   ├── lastMessageTime: "2024-01-15T12:30:00.000Z"
+│   │   ├── unreadCount: 2
+│   │   ├── isActive: true
+│   │   └── messages/
+│   │       ├── {msgId_1}/
+│   │       │   ├── messageId: "msg_abc123"
+│   │       │   ├── senderId: "patient_uid"
+│   │       │   ├── senderName: "Ahmed Khan"
+│   │       │   ├── text: "Doctor, I have chest pain"
+│   │       │   ├── timestamp: "2024-01-15T12:00:00.000Z"
+│   │       │   ├── isRead: true
+│   │       │   └── imageUrl: null
+│   │       │
+│   │       └── {msgId_2}/
+│   │           └── ... (other messages)
+│   │
+│   └── ... (other chat rooms)
+│
+├── mcqs/
+│   ├── {questionId_1}/
+│   │   ├── questionId: "q1"
+│   │   ├── question: "What is the normal heart rate?"
+│   │   ├── options: ["40-60 bpm", "60-100 bpm", "100-120 bpm", "120-140 bpm"]
+│   │   ├── correctAnswerIndex: 1
+│   │   ├── explanation: "Normal resting heart rate..."
+│   │   └── category: "cardiology"
+│   │
+│   ├── {questionId_2}/
+│   │   └── ... (more questions)
+│   │
+│   └── results/
+│       ├── {doctorUid}/
+│       │   ├── doctorId: "doctor_uid"
+│       │   ├── answers: {"q1": 1, "q2": 3, "q3": 2}
+│       │   ├── totalQuestions: 10
+│       │   ├── correctAnswers: 8
+│       │   ├── percentage: 80.0
+│       │   ├── isPassed: true
+│       │   └── submittedAt: "2024-01-15T11:00:00.000Z"
+│       │
+│       └── ... (other results)
+│
+└── settings/
+    ├── maintenanceMode: false
+    ├── appVersion: "1.0.0"
+    ├── supportEmail: "support@homigocare.com"
+    └── supportPhone: "+923001234567"
+
+================================================================================
+SECTION 7: TESTING MODE vs LOCKED MODE
+================================================================================
+
+   =============================================
+   TESTING MODE (Development Phase)
+   =============================================
+   
+   When to use: While building and testing the app
+   Rules: { "rules": { ".read": true, ".write": true } }
+   
+   Pros:
+   - Anyone can read/write (easy testing)
+   - No authentication required for DB access
+   - Fast development
+   
+   Cons:
+   - SECURITY RISK - anyone can delete your data
+   - Anyone can inject malicious data
+   - NEVER use in production
+   
+   How to set:
+   1. Firebase Console → Realtime Database → Rules
+   2. Paste: { "rules": { ".read": true, ".write": true } }
+   3. Click "Publish"
+   
+   =============================================
+   LOCKED MODE (Production)
+   =============================================
+   
+   When to use: After app is ready and tested
+   Rules: Use the rules from real-time-database-security-rule.txt
+   
+   Pros:
+   - Only authenticated users can access
+   - Role-based access control
+   - Users can only modify their own data
+   - Admin has full access
+   
+   Cons:
+   - Must be properly configured
+   - Wrong rules = app breaks
+   
+   How to switch:
+   1. Make sure all auth is working
+   2. Make sure your code handles errors
+   3. Go to Realtime Database → Rules
+   4. Paste production rules
+   5. Click "Publish"
+   6. Test the app thoroughly
+
+================================================================================
+SECTION 8: HOW TO TEST DATABASE
+================================================================================
+
+Step 1: Go to Realtime Database → Data tab
+Step 2: You can manually add data by clicking "+" buttons
+Step 3: Test by adding a user manually:
+
+   Click on root "+" → Name: "users"
+   Click on "users" "+" → Name: "test123"
+   Click on "test123" → Add fields:
+     - uid: "test123"
+     - email: "test@email.com"
+     - fullName: "Test User"
+     - role: "patient"
+     - status: "active"
+
+Step 4: Check if your app reads this data
+Step 5: Try writing from the app
+Step 6: Check if data appears in console
+
+================================================================================
+SECTION 9: FIREBASE CONFIG FILES
+================================================================================
+
+After creating the project, you'll get:
+
+1. google-services.json (Android)
+   → Place at: android/app/google-services.json
+   
+   This file contains:
+   - API key
+   - Project ID
+   - Database URL (if enabled during project creation)
+   
+2. Firebase config in Dart code:
+   
+   You need to create firebase_options.dart manually:
+   
+   import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;
+   
+   class DefaultFirebaseOptions {
+     static FirebaseOptions get currentPlatform {
+       return android;
+     }
+   
+     static const FirebaseOptions android = FirebaseOptions(
+       apiKey: 'AIzaSyXXXXXXXXXXXXXXXXX',
+       appId: '1:123456789:android:abcdef123456',
+       messagingSenderId: '123456789',
+       projectId: 'homigo-care-xxxxx',
+       databaseURL: 'https://homigo-care-xxxxx-default-rtdb.firebaseio.com',
+     );
+   }
+   
+   Get these values from: Firebase Console → Project Settings → General
+
+================================================================================
+SECTION 10: QUICK COMMANDS
+================================================================================
+
+# Initialize Firebase in Flutter project
+flutter pub add firebase_core
+flutter pub add firebase_auth
+flutter pub add firebase_database
+
+# For Google Sign-In
+flutter pub add google_sign_in
+
+# For Android - after adding google-services.json
+cd HomigoCare
+flutter pub get
+flutter build apk --debug
+
+# For testing on device
+flutter run
+
+# For release build
+flutter build apk --release
+
+# The APK will be at:
+# build/app/outputs/flutter-apk/app-release.apk
+
+================================================================================
+SECTION 11: COMMON ERRORS AND FIXES
+================================================================================
+
+Error: "Firebase has not been initialized"
+Fix: Make sure Firebase.initializeApp() is called in main.dart before runApp()
+
+Error: "Database not found"
+Fix: Check databaseURL in firebase_options.dart matches your Firebase Console URL
+
+Error: "Permission denied"
+Fix: Check security rules. For testing, use test mode rules.
+
+Error: "google-services.json not found"
+Fix: Make sure file is at android/app/google-services.json (not in lib/)
+
+Error: "SHA-1 mismatch"
+Fix: Run: keytool -list -v -keystore ~/.android/debug.keystore -alias androiddebugkey -storepass android
+     Add SHA-1 to Firebase Console → Project Settings → Your App
+
+Error: "Network error"
+Fix: Check internet permission in AndroidManifest.xml
+
+================================================================================
+                              END OF FILE
+================================================================================

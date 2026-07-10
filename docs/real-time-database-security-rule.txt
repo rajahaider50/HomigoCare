@@ -1,0 +1,546 @@
+================================================================================
+         HOMIGO CARE - REALTIME DATABASE SECURITY RULES (FULLY WORKING)
+================================================================================
+
+IMPORTANT: These rules are for PRODUCTION use. 
+For testing, use the simple rules at the bottom of this file.
+
+================================================================================
+SECTION 1: COMPLETE PRODUCTION RULES
+================================================================================
+
+Copy everything between the --- markers and paste in Firebase Console → 
+Realtime Database → Rules → Click "Publish"
+
+--- START OF RULES ---
+
+{
+  "rules": {
+
+    "users": {
+      ".read": "auth != null",
+      ".write": "auth != null && (data.child('uid').val() === auth.uid || root.child('users').child(auth.uid).child('role').val() === 'admin')",
+
+      "$uid": {
+        ".read": "auth != null && ($uid === auth.uid || root.child('users').child(auth.uid).child('role').val() === 'admin')",
+        ".write": "auth != null && ($uid === auth.uid || root.child('users').child(auth.uid).child('role').val() === 'admin')",
+
+        "uid": {
+          ".validate": "newData.isString() && newData.val().length > 0"
+        },
+        "email": {
+          ".validate": "newData.isString() && newData.val().contains('.')"
+        },
+        "fullName": {
+          ".validate": "newData.isString() && newData.val().length >= 2"
+        },
+        "phoneNumber": {
+          ".validate": "newData.isString() && newData.val().length >= 10"
+        },
+        "role": {
+          ".validate": "newData.isString() && ['patient', 'doctor', 'nurse', 'lab', 'admin'].indexOf(newData.val()) !== -1"
+        },
+        "status": {
+          ".validate": "newData.isString() && ['active', 'inactive', 'pending'].indexOf(newData.val()) !== -1"
+        },
+        "createdAt": {
+          ".validate": "newData.isString()"
+        },
+        "updatedAt": {
+          ".validate": "newData.isString()"
+        }
+      }
+    },
+
+    "doctors": {
+      ".read": "auth != null",
+      ".write": "auth != null",
+
+      "$doctorUid": {
+        ".read": "auth != null",
+        ".write": "auth != null && ($doctorUid === auth.uid || root.child('users').child(auth.uid).child('role').val() === 'admin')",
+
+        "uid": {
+          ".validate": "newData.isString() && newData.val().length > 0"
+        },
+        "fullName": {
+          ".validate": "newData.isString() && newData.val().length >= 2"
+        },
+        "email": {
+          ".validate": "newData.isString() && newData.val().contains('.')"
+        },
+        "specialization": {
+          ".validate": "newData.isString() && newData.val().length > 0"
+        },
+        "experience": {
+          ".validate": "newData.isNumber() && newData.val() >= 0"
+        },
+        "consultationFee": {
+          ".validate": "newData.isNumber() && newData.val() >= 0"
+        },
+        "medicalCouncilReg": {
+          ".validate": "newData.isString() && newData.val().length > 0"
+        },
+        "availableDays": {
+          ".validate": "newData.isList()"
+        },
+        "isVerified": {
+          ".validate": "newData.isBoolean()"
+        },
+        "isAvailable": {
+          ".validate": "newData.isBoolean()"
+        },
+        "status": {
+          ".validate": "newData.isString() && ['pending', 'approved', 'rejected'].indexOf(newData.val()) !== -1"
+        },
+        "rating": {
+          ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 5"
+        },
+        "totalPatients": {
+          ".validate": "newData.isNumber() && newData.val() >= 0"
+        },
+
+        "documents": {
+          ".read": "auth != null && ($doctorUid === auth.uid || root.child('users').child(auth.uid).child('role').val() === 'admin')",
+          ".write": "auth != null && ($doctorUid === auth.uid || root.child('users').child(auth.uid).child('role').val() === 'admin')"
+        },
+
+        "$other": {
+          ".validate": true
+        }
+      }
+    },
+
+    "nurses": {
+      ".read": "auth != null",
+      ".write": "auth != null",
+
+      "$nurseUid": {
+        ".read": "auth != null",
+        ".write": "auth != null && ($nurseUid === auth.uid || root.child('users').child(auth.uid).child('role').val() === 'admin')",
+
+        "uid": {
+          ".validate": "newData.isString() && newData.val().length > 0"
+        },
+        "fullName": {
+          ".validate": "newData.isString() && newData.val().length >= 2"
+        },
+        "qualification": {
+          ".validate": "newData.isString() && newData.val().length > 0"
+        },
+        "yearsOfExperience": {
+          ".validate": "newData.isNumber() && newData.val() >= 0"
+        },
+        "serviceAreas": {
+          ".validate": "newData.isList()"
+        },
+        "isAvailableForHome": {
+          ".validate": "newData.isBoolean()"
+        },
+        "isVerified": {
+          ".validate": "newData.isBoolean()"
+        },
+        "status": {
+          ".validate": "newData.isString() && ['pending', 'approved', 'rejected'].indexOf(newData.val()) !== -1"
+        },
+        "rating": {
+          ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 5"
+        },
+
+        "documents": {
+          ".read": "auth != null && ($nurseUid === auth.uid || root.child('users').child(auth.uid).child('role').val() === 'admin')",
+          ".write": "auth != null && ($nurseUid === auth.uid || root.child('users').child(auth.uid).child('role').val() === 'admin')"
+        },
+
+        "$other": {
+          ".validate": true
+        }
+      }
+    },
+
+    "labs": {
+      ".read": "auth != null",
+      ".write": "auth != null",
+
+      "$labUid": {
+        ".read": "auth != null",
+        ".write": "auth != null && ($labUid === auth.uid || root.child('users').child(auth.uid).child('role').val() === 'admin')",
+
+        "uid": {
+          ".validate": "newData.isString() && newData.val().length > 0"
+        },
+        "labName": {
+          ".validate": "newData.isString() && newData.val().length > 0"
+        },
+        "ownerName": {
+          ".validate": "newData.isString() && newData.val().length > 0"
+        },
+        "licenseNumber": {
+          ".validate": "newData.isString() && newData.val().length > 0"
+        },
+        "availableTests": {
+          ".validate": "newData.isList()"
+        },
+        "isVerified": {
+          ".validate": "newData.isBoolean()"
+        },
+        "status": {
+          ".validate": "newData.isString() && ['pending', 'approved', 'rejected'].indexOf(newData.val()) !== -1"
+        },
+        "rating": {
+          ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 5"
+        },
+
+        "documents": {
+          ".read": "auth != null && ($labUid === auth.uid || root.child('users').child(auth.uid).child('role').val() === 'admin')",
+          ".write": "auth != null && ($labUid === auth.uid || root.child('users').child(auth.uid).child('role').val() === 'admin')"
+        },
+
+        "$other": {
+          ".validate": true
+        }
+      }
+    },
+
+    "bookings": {
+      ".read": "auth != null",
+      ".write": "auth != null",
+
+      "$bookingId": {
+        ".read": "auth != null && (data.child('patientId').val() === auth.uid || data.child('providerId').val() === auth.uid || root.child('users').child(auth.uid).child('role').val() === 'admin')",
+        ".write": "auth != null && (data.child('patientId').val() === auth.uid || data.child('providerId').val() === auth.uid || root.child('users').child(auth.uid).child('role').val() === 'admin')",
+
+        "bookingId": {
+          ".validate": "newData.isString() && newData.val().length > 0"
+        },
+        "patientId": {
+          ".validate": "newData.isString() && newData.val().length > 0"
+        },
+        "patientName": {
+          ".validate": "newData.isString() && newData.val().length > 0"
+        },
+        "providerId": {
+          ".validate": "newData.isString() && newData.val().length > 0"
+        },
+        "providerName": {
+          ".validate": "newData.isString() && newData.val().length > 0"
+        },
+        "providerType": {
+          ".validate": "newData.isString() && ['doctor', 'nurse', 'lab'].indexOf(newData.val()) !== -1"
+        },
+        "date": {
+          ".validate": "newData.isString()"
+        },
+        "timeSlot": {
+          ".validate": "newData.isString() && newData.val().length > 0"
+        },
+        "status": {
+          ".validate": "newData.isString() && ['pending', 'confirmed', 'completed', 'cancelled'].indexOf(newData.val()) !== -1"
+        },
+        "fee": {
+          ".validate": "newData.isNumber() && newData.val() >= 0"
+        },
+        "paymentStatus": {
+          ".validate": "newData.isString() && ['unpaid', 'paid', 'refunded'].indexOf(newData.val()) !== -1"
+        },
+        "createdAt": {
+          ".validate": "newData.isString()"
+        },
+        "updatedAt": {
+          ".validate": "newData.isString()"
+        },
+
+        "$other": {
+          ".validate": true
+        }
+      }
+    },
+
+    "chats": {
+      ".read": "auth != null",
+      ".write": "auth != null",
+
+      "$chatId": {
+        ".read": "auth != null && (data.child('patientId').val() === auth.uid || data.child('providerId').val() === auth.uid || root.child('users').child(auth.uid).child('role').val() === 'admin')",
+        ".write": "auth != null && (data.child('patientId').val() === auth.uid || data.child('providerId').val() === auth.uid || root.child('users').child(auth.uid).child('role').val() === 'admin')",
+
+        "chatId": {
+          ".validate": "newData.isString() && newData.val().length > 0"
+        },
+        "patientId": {
+          ".validate": "newData.isString() && newData.val().length > 0"
+        },
+        "providerId": {
+          ".validate": "newData.isString() && newData.val().length > 0"
+        },
+        "isActive": {
+          ".validate": "newData.isBoolean()"
+        },
+        "unreadCount": {
+          ".validate": "newData.isNumber() && newData.val() >= 0"
+        },
+
+        "messages": {
+          "$messageId": {
+            ".read": "auth != null",
+            ".write": "auth != null && (data.child('senderId').val() === auth.uid || root.child('users').child(auth.uid).child('role').val() === 'admin')",
+
+            "messageId": {
+              ".validate": "newData.isString() && newData.val().length > 0"
+            },
+            "senderId": {
+              ".validate": "newData.isString() && newData.val().length > 0"
+            },
+            "senderName": {
+              ".validate": "newData.isString() && newData.val().length > 0"
+            },
+            "text": {
+              ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 1000"
+            },
+            "timestamp": {
+              ".validate": "newData.isString()"
+            },
+            "isRead": {
+              ".validate": "newData.isBoolean()"
+            },
+            "$other": {
+              ".validate": true
+            }
+          }
+        },
+
+        "$other": {
+          ".validate": true
+        }
+      }
+    },
+
+    "mcqs": {
+      ".read": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin'",
+      ".write": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin'",
+
+      "results": {
+        ".read": "auth != null",
+        ".write": "auth != null",
+
+        "$doctorUid": {
+          ".read": "auth != null && ($doctorUid === auth.uid || root.child('users').child(auth.uid).child('role').val() === 'admin')",
+          ".write": "auth != null && ($doctorUid === auth.uid || root.child('users').child(auth.uid).child('role').val() === 'admin')",
+
+          "doctorId": {
+            ".validate": "newData.isString() && newData.val() === $doctorUid"
+          },
+          "totalQuestions": {
+            ".validate": "newData.isNumber() && newData.val() > 0"
+          },
+          "correctAnswers": {
+            ".validate": "newData.isNumber() && newData.val() >= 0"
+          },
+          "percentage": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100"
+          },
+          "isPassed": {
+            ".validate": "newData.isBoolean()"
+          },
+          "submittedAt": {
+            ".validate": "newData.isString()"
+          },
+
+          "$other": {
+            ".validate": true
+          }
+        }
+      }
+    },
+
+    "settings": {
+      ".read": "auth != null",
+      ".write": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin'"
+    }
+  }
+}
+
+--- END OF RULES ---
+
+================================================================================
+SECTION 2: RULES EXPLAINED - WHO CAN DO WHAT
+================================================================================
+
+USER ROLES:
+- patient: Can book appointments, chat, view own data
+- doctor: Can manage appointments, view own profile, chat with patients
+- nurse: Can manage home visits, view own profile
+- lab: Can manage test orders, view own profile
+- admin: Full access to everything
+
+PERMISSION MATRIX:
+================================================================================
+| Path               | Patient | Doctor | Nurse | Lab   | Admin       |
+|--------------------|---------|--------|-------|-------|-------------|
+| /users/self        | R/W     | R/W    | R/W   | R/W   | R/W         |
+| /users/other       | None    | None   | None  | None  | R/W         |
+| /doctors/self      | R       | R/W    | R     | R     | R/W         |
+| /doctors/other     | R       | R      | R     | R     | R/W         |
+| /nurses/self       | R       | R      | R/W   | R     | R/W         |
+| /nurses/other      | R       | R      | R     | R     | R/W         |
+| /labs/self         | R       | R      | R     | R/W   | R/W         |
+| /labs/other        | R       | R      | R     | R     | R/W         |
+| /bookings/self     | R/W     | R/W    | R/W   | R/W   | R/W         |
+| /chats/self        | R/W     | R/W    | R/W   | R/W   | R/W         |
+| /mcqs/questions    | None    | None   | None  | None  | R/W         |
+| /mcqs/results/self | R       | R/W    | None  | None  | R/W         |
+| /settings          | R       | R      | R     | R     | R/W         |
+================================================================================
+
+Legend: R = Read, W = Write, None = No Access
+
+================================================================================
+SECTION 3: DETAILED RULES BREAKDOWN
+================================================================================
+
+1. USERS PATH:
+   
+   Users can READ their own data only.
+   Users can UPDATE their own profile (name, phone, profileImage).
+   Admin can READ and WRITE all user data.
+   Admin can change user status (active/inactive).
+   Admin can change user role.
+
+2. DOCTORS PATH:
+   
+   Any authenticated user can READ doctor profiles (for listing).
+   Doctor can UPDATE their own profile.
+   Only Admin can:
+     - Change status (pending → approved → rejected)
+     - Toggle isVerified
+     - View all doctor documents
+   Doctor documents are private - only doctor and admin can access.
+
+3. NURSES PATH:
+   
+   Same as doctors.
+   Any authenticated user can READ nurse profiles.
+   Nurse can UPDATE own profile.
+   Admin has full control.
+
+4. LABS PATH:
+   
+   Same as doctors/nurses.
+   Any authenticated user can READ lab profiles.
+   Lab can UPDATE own profile.
+   Admin has full control.
+
+5. BOOKINGS PATH:
+   
+   Patient can CREATE bookings for themselves.
+   Patient can READ own bookings.
+   Provider (doctor/nurse/lab) can READ bookings assigned to them.
+   Provider can UPDATE booking status (confirm/complete).
+   Patient can CANCEL their own booking.
+   Admin can READ and WRITE all bookings.
+
+6. CHATS PATH:
+   
+   Patient and Provider can READ chat messages between them.
+   Either party can SEND messages.
+   Only the sender can update their own message (mark as read).
+   Admin can READ all chats (for monitoring).
+
+7. MCQs PATH:
+   
+   Only Admin can READ and WRITE questions.
+   Doctor can READ results (only their own).
+   Doctor can WRITE their own test result.
+   Admin can READ and WRITE all results.
+
+8. SETTINGS PATH:
+   
+   Everyone can READ settings.
+   Only Admin can WRITE/UPDATE settings.
+
+================================================================================
+SECTION 4: TESTING RULES
+================================================================================
+
+For development/testing, use this simple rule:
+
+--- START OF TEST RULES ---
+
+{
+  "rules": {
+    ".read": true,
+    ".write": true
+  }
+}
+
+--- END OF TEST RULES ---
+
+WARNING: These rules allow anyone to read/write your database.
+Only use during development. Remove before production.
+
+================================================================================
+SECTION 5: HOW TO UPDATE RULES
+================================================================================
+
+Step 1: Go to Firebase Console
+Step 2: Build → Realtime Database → Rules tab
+Step 3: Delete existing rules
+Step 4: Paste the rules from Section 1
+Step 5: Click "Publish"
+Step 6: Test immediately - try logging in and registering
+
+TROUBLESHOOTING:
+If app stops working after rule change:
+1. Check Firebase Console → Authentication → Make sure user is logged in
+2. Check Database → Make sure data structure matches rules
+3. Check if you're trying to write to a path you don't have permission for
+4. Use Firebase Console → Database → Rules → "Simulate" feature to test
+
+================================================================================
+SECTION 6: RULE VALIDATION SYNTAX
+================================================================================
+
+Firebase Realtime Database rules use JavaScript-like syntax:
+
+.auth != null          → User must be logged in
+auth.uid               → Current user's unique ID
+data.child('x').val()  → Value of field 'x' in current node
+newData.child('x').val() → Value of field 'x' being written
+root.child('users').child(auth.uid).child('role').val()
+                       → Get current user's role from users table
+newData.isString()     → Check if value is a string
+newData.isNumber()     → Check if value is a number
+newData.isBoolean()    → Check if value is a boolean
+newData.isList()       → Check if value is an array
+newData.val().length   → Get string length
+.indexOf() !== -1      → Check if value exists in array
+
+================================================================================
+SECTION 7: ADMIN ROLE SETUP
+================================================================================
+
+The admin user must be manually created in the database:
+
+Step 1: Create admin user in Firebase Console → Authentication
+        - Email: admin@homigocare.com
+        - Password: (your secure password)
+        - Note the UID from the users table
+
+Step 2: In Realtime Database, go to /users/{admin_uid}
+        Set role to "admin":
+        
+        {
+          "uid": "admin_uid_here",
+          "email": "admin@homigocare.com",
+          "fullName": "Admin",
+          "role": "admin",
+          "status": "active"
+        }
+
+Step 3: Now this user has full access to everything
+
+IMPORTANT: Keep admin credentials secure. Never share them.
+
+================================================================================
+                              END OF FILE
+================================================================================

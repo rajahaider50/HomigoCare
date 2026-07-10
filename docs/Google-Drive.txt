@@ -1,0 +1,476 @@
+================================================================================
+              HOMIGO CARE - GOOGLE DRIVE INTEGRATION GUIDE (FULL)
+================================================================================
+
+STORAGE: Google Drive API with Shared Drive
+QUOTA: 5 TB (5,000 GB)
+PURPOSE: Store all documents, reports, images securely
+
+================================================================================
+SECTION 1: WHY GOOGLE DRIVE (Not Firebase Storage)
+================================================================================
+
+Firebase Storage limitations:
+- 1 GB free, then paid ($0.026/GB)
+- 5 TB would cost ~$130/month on Firebase Storage
+
+Google Drive advantages:
+- 5 TB storage available (shared drive)
+- Free tier: 15 GB per user
+- Shared Drive: Up to 5 TB (admin manages)
+- Built-in file sharing
+- Version history
+- Search functionality
+
+================================================================================
+SECTION 2: GOOGLE CLOUD SETUP
+================================================================================
+
+Step 1: Go to https://console.cloud.google.com/
+
+Step 2: Create new project:
+   - Project name: "Homigo Care Drive"
+   - Click "Create"
+
+Step 3: Enable Google Drive API:
+   - Go to APIs & Services → Library
+   - Search: "Google Drive API"
+   - Click "Enable"
+
+Step 4: Create Credentials:
+   - Go to APIs & Services → Credentials
+   - Click "Create Credentials" → "OAuth client ID"
+   
+   For Android App:
+   - Application type: Android
+   - Name: "Homigo Care Android"
+   - Package name: com.homigocare.app
+   - SHA-1 certificate: (get from: keytool -list -v -keystore ~/.android/debug.keystore)
+   - Click "Create"
+   - Download JSON (rename to drive_credentials.json)
+   
+   For Web (Admin Panel):
+   - Application type: Web application
+   - Name: "Homigo Care Admin"
+   - Authorized JavaScript origins: http://localhost (for development)
+   - Redirect URIs: http://localhost
+   - Click "Create"
+   - Note the Client ID and Client Secret
+
+Step 5: Configure OAuth Consent Screen:
+   - Go to APIs & Services → OAuth consent screen
+   - User type: External
+   - App name: "Homigo Care"
+   - User support email: (your email)
+   - Developer contact: (your email)
+   - Scopes: Add these:
+     - https://www.googleapis.com/auth/drive.file
+     - https://www.googleapis.com/auth/drive.appdata
+   - Test users: Add your email
+   - Click "Save and Continue"
+
+================================================================================
+SECTION 3: CREATE SHARED DRIVE (FOLDER STRUCTURE)
+================================================================================
+
+A Shared Drive is like a team drive that multiple users can access.
+
+Step 1: Go to https://drive.google.com/
+
+Step 2: On left sidebar, click "Shared drives" (or "Shared with me" → 
+        "Shared drives")
+
+Step 3: Click "New" → "Create shared drive"
+
+Step 4: Name: "Homigo Care Storage"
+
+Step 5: Add yourself as manager
+
+Step 6: Create this folder structure INSIDE the Shared Drive:
+
+Homigo Care Storage/
+├── 01 - User Profile Images/
+│   ├── patients/
+│   ├── doctors/
+│   ├── nurses/
+│   └── labs/
+│
+├── 02 - Doctor Documents/
+│   ├── {doctor_name}/
+│   │   ├── driving_license/
+│   │   ├── medical_degree/
+│   │   └── nmc_certificate/
+│   └── ...
+│
+├── 03 - Nurse Documents/
+│   ├── {nurse_name}/
+│   │   ├── agha_khan_cert/
+│   │   └── driving_license/
+│   └── ...
+│
+├── 04 - Lab Documents/
+│   ├── {lab_name}/
+│   │   ├── nabeel_lab_cert/
+│   │   └── lab_license/
+│   └── ...
+│
+├── 05 - Patient Lab Reports/
+│   ├── {patient_name}/
+│   │   ├── blood_test/
+│   │   ├── xray/
+│   │   └── mri/
+│   └── ...
+│
+├── 06 - Chat Images/
+│   └── {chat_id}/
+│       └── (images shared in chat)
+│
+└── 07 - App Assets/
+    ├── banners/
+    ├── health_tips/
+    └── logos/
+
+================================================================================
+SECTION 4: GET SHARED DRIVE ID
+================================================================================
+
+Step 1: Open your Shared Drive in browser
+Step 2: Look at the URL:
+   https://drive.google.com/drive/folders/1ABC123def456GHI789jkl012MNO345pqr
+   
+   The ID is: 1ABC123def456GHI789jkl012MNO345pqr
+
+Step 3: Note this ID down - you'll need it in the app code
+
+================================================================================
+SECTION 5: FOLDER CREATION IN CODE
+================================================================================
+
+When a user registers, create their folder automatically:
+
+Doctor Registration Flow:
+1. User registers as doctor
+2. App creates folder: "02 - Doctor Documents/{doctor_name}/"
+3. Inside create sub-folders:
+   - "driving_license/"
+   - "medical_degree/"
+   - "nmc_certificate/"
+4. When user uploads document, file goes into correct sub-folder
+
+Nurse Registration Flow:
+1. User registers as nurse
+2. App creates folder: "03 - Nurse Documents/{nurse_name}/"
+3. Inside create sub-folders:
+   - "agha_khan_cert/"
+   - "driving_license/"
+
+Lab Registration Flow:
+1. User registers as lab
+2. App creates folder: "04 - Lab Documents/{lab_name}/"
+3. Inside create sub-folders:
+   - "nabeel_lab_cert/"
+   - "lab_license/"
+
+Patient Lab Reports Flow:
+1. Patient books lab test
+2. Lab completes test
+3. Lab uploads report to: "05 - Patient Lab Reports/{patient_name}/blood_test/"
+4. Patient can view report in app
+
+================================================================================
+SECTION 6: APP INTEGRATION - HOW FILES ARE STORED
+================================================================================
+
+File Naming Convention:
+{uid}_{docType}_{timestamp}.{extension}
+
+Examples:
+doc123_driving_license_20240115.pdf
+doc123_medical_degree_20240115.jpg
+nurse456_agha_khan_cert_20240116.png
+lab789_nabeel_lab_cert_20240117.pdf
+patient101_blood_test_20240201.pdf
+
+File Size Limits:
+- Profile Images: Max 5 MB (compress before upload)
+- Documents: Max 10 MB per file
+- Lab Reports: Max 20 MB per file
+- Chat Images: Max 5 MB (compress before upload)
+
+Supported Formats:
+- Images: JPG, PNG, WEBP
+- Documents: PDF
+- Lab Reports: PDF, JPG, PNG
+
+================================================================================
+SECTION 7: UPLOAD FLOW
+================================================================================
+
+1. User selects file in app
+2. App compresses image (if image) to reduce size
+3. App uploads to Google Drive via REST API
+4. Google Drive returns a file ID
+5. App stores file ID in Firebase Realtime Database
+6. Later, app uses file ID to view/download file
+
+Upload API Call:
+POST https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart
+Headers:
+  Authorization: Bearer {access_token}
+  Content-Type: multipart/related; boundary=foo_bar_baz
+Body:
+  --foo_bar_baz
+  Content-Type: application/json; charset=UTF-8
+  {"name": "filename.pdf", "parents": ["folder_id"]}
+  --foo_bar_baz
+  Content-Type: application/pdf
+  (binary file data)
+  --foo_bar_baz--
+
+Download/View:
+GET https://www.googleapis.com/drive/v3/files/{file_id}?alt=media
+Headers:
+  Authorization: Bearer {access_token}
+
+Delete:
+DELETE https://www.googleapis.com/drive/v3/files/{file_id}
+Headers:
+  Authorization: Bearer {access_token}
+
+================================================================================
+SECTION 8: ACCESS TOKEN FLOW
+================================================================================
+
+Google Drive requires OAuth2 access tokens.
+
+For Android App:
+1. User opens app
+2. App calls Google Sign-In
+3. Google returns access token
+4. App uses this token for all Drive operations
+5. Token expires after 1 hour
+6. App auto-refreshes token
+
+For Web Admin Panel:
+1. Admin opens admin panel
+2. Google Sign-In popup
+3. Admin authorizes Drive access
+4. Token stored in session
+5. Used for all admin Drive operations
+
+Token Scopes Required:
+- https://www.googleapis.com/auth/drive.file
+  (Access files created by the app)
+- https://www.googleapis.com/auth/drive.appdata
+  (Access app-specific data)
+
+================================================================================
+SECTION 9: COMPLETE DATA STORAGE MAP
+================================================================================
+
+WHAT GOES WHERE:
+
+1. USER PROFILE DATA → Firebase Realtime Database
+   - Name, email, phone, role, status
+   - All text-based data
+
+2. PROFILE IMAGES → Google Drive + Database link
+   - Google Drive: 01 - User Profile Images/{role}/{uid}_profile.jpg
+   - Database: profileImage field → file ID
+
+3. DOCTOR DOCUMENTS → Google Drive + Database metadata
+   - Google Drive: 02 - Doctor Documents/{name}/{doc_type}/
+   - Database: documents field → { docType: file_id }
+
+4. NURSE CERTIFICATES → Google Drive + Database metadata
+   - Google Drive: 03 - Nurse Documents/{name}/{cert_type}/
+   - Database: documents field → { certType: file_id }
+
+5. LAB CERTIFICATES → Google Drive + Database metadata
+   - Google Drive: 04 - Lab Documents/{name}/{cert_type}/
+   - Database: documents field → { certType: file_id }
+
+6. LAB REPORTS → Google Drive + Database metadata
+   - Google Drive: 05 - Patient Lab Reports/{patient_name}/{test_type}/
+   - Database: booking notes → report file ID
+
+7. CHAT IMAGES → Google Drive + Database reference
+   - Google Drive: 06 - Chat Images/{chat_id}/{image_name}
+   - Database: message imageUrl → file ID
+
+8. APP ASSETS → Google Drive (static)
+   - Google Drive: 07 - App Assets/{type}/
+   - Used for banners, health tips, etc.
+
+================================================================================
+SECTION 10: FOLDER CREATION CODE (DART)
+================================================================================
+
+This is how folders are created in the app:
+
+// Step 1: Get Shared Drive ID
+const String sharedDriveId = 'YOUR_SHARED_DRIVE_ID_HERE';
+
+// Step 2: Create folder structure for new doctor
+Future<void> createDoctorFolders(String doctorUid, String doctorName) async {
+  // Create main doctor folder
+  String doctorFolderId = await createFolder(
+    name: doctorName,
+    parentFolderId: doctorDocumentFolderId, // "02 - Doctor Documents" folder ID
+  );
+  
+  // Create sub-folders
+  await createFolder(name: 'driving_license', parentFolderId: doctorFolderId);
+  await createFolder(name: 'medical_degree', parentFolderId: doctorFolderId);
+  await createFolder(name: 'nmc_certificate', parentFolderId: doctorFolderId);
+}
+
+// Step 3: Upload file to specific folder
+Future<String> uploadDocument({
+  required File file,
+  required String fileName,
+  required String folderId,
+}) async {
+  // Upload to Google Drive
+  String? fileId = await googleDriveService.uploadFile(
+    file: file,
+    fileName: fileName,
+    folderId: folderId,
+  );
+  
+  if (fileId != null) {
+    // Save file reference in database
+    await FirebaseDatabaseService().updateDoctor(
+      doctorUid,
+      {'documents.$docType': fileId},
+    );
+  }
+  
+  return fileId ?? '';
+}
+
+// Step 4: View/Download file
+Future<Uint8List?> downloadDocument(String fileId) async {
+  // Get file from Google Drive
+  String url = 'https://www.googleapis.com/drive/v3/files/$fileId?alt=media';
+  final response = await http.get(
+    Uri.parse(url),
+    headers: {'Authorization': 'Bearer $accessToken'},
+  );
+  
+  if (response.statusCode == 200) {
+    return response.bodyBytes;
+  }
+  return null;
+}
+
+================================================================================
+SECTION 11: FOLDER IDs TO NOTE DOWN
+================================================================================
+
+After creating the folder structure, note down these IDs:
+
+Shared Drive ID: _________________________________
+(This is the root Shared Drive ID)
+
+Main Folders:
+01 - User Profile Images: _________________________________
+02 - Doctor Documents: _________________________________
+03 - Nurse Documents: _________________________________
+04 - Lab Documents: _________________________________
+05 - Patient Lab Reports: _________________________________
+06 - Chat Images: _________________________________
+07 - App Assets: _________________________________
+
+To get folder ID:
+1. Open the folder in Google Drive
+2. Look at URL: https://drive.google.com/drive/folders/FOLDER_ID_HERE
+3. Copy the FOLDER_ID_HERE part
+
+================================================================================
+SECTION 12: GOOGLE DRIVE LIMITS
+================================================================================
+
+Shared Drive Limits:
+- Storage: 5 TB total
+- Files per folder: 500,000 (but we won't hit this)
+- Max file size: 5 TB (per file)
+- Max uploads: 10 per second per user
+
+Our Estimated Usage:
+- 1000 users × 5 MB profile = 5 GB
+- 500 doctors × 3 docs × 5 MB = 7.5 GB
+- 200 nurses × 2 docs × 5 MB = 2 GB
+- 100 labs × 2 docs × 5 MB = 1 GB
+- 5000 lab reports × 10 MB = 50 GB
+- 10,000 chat images × 2 MB = 20 GB
+- App assets = 1 GB
+TOTAL: ~86.5 GB (well within 5 TB limit)
+
+================================================================================
+SECTION 13: SECURITY CONSIDERATIONS
+================================================================================
+
+1. ACCESS TOKEN SECURITY:
+   - Never hardcode tokens in app code
+   - Always refresh tokens before expiry
+   - Store tokens in secure storage
+
+2. FILE VALIDATION:
+   - Validate file type before upload
+   - Scan for malicious files
+   - Limit file size
+
+3. FOLDER PERMISSIONS:
+   - Shared Drive is private by default
+   - Only app's service account can access
+   - Users access through app only
+
+4. BACKUP:
+   - Google Drive has built-in version history
+   - Enable versioning for important documents
+   - Consider periodic backup to external storage
+
+================================================================================
+SECTION 14: TESTING GOOGLE DRIVE INTEGRATION
+================================================================================
+
+Step 1: Create test Shared Drive
+Step 2: Create test folder structure
+Step 3: Upload a test file from app
+Step 4: Verify file appears in Google Drive
+Step 5: Download file from app
+Step 6: Verify content matches
+Step 7: Delete file from app
+Step 8: Verify file is deleted from Drive
+
+Test Checklist:
+□ Google Sign-In works
+□ Access token obtained
+□ Shared Drive accessible
+□ Folders can be created
+□ Files can be uploaded
+□ Files can be downloaded
+□ Files can be deleted
+□ File metadata stored in database
+□ Expired token refresh works
+
+================================================================================
+SECTION 15: QUICK REFERENCE
+================================================================================
+
+Google Cloud Console: https://console.cloud.google.com/
+Google Drive API Docs: https://developers.google.com/drive/api/v3/reference
+Shared Drive Limits: https://support.google.com/a/answer/7337554
+OAuth Playground: https://developers.google.com/oauthplayground/
+
+API Base URL: https://www.googleapis.com/drive/v3
+Upload URL: https://www.googleapis.com/upload/drive/v3/files
+
+Scopes:
+- drive.file (access files created by app)
+- drive.appdata (access app data folder)
+
+================================================================================
+                              END OF FILE
+================================================================================

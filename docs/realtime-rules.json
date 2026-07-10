@@ -1,0 +1,66 @@
+{
+  "rules": {
+    "users": {
+      "$uid": {
+        ".read": "auth != null && ($uid === auth.uid || root.child('users').child(auth.uid).child('role').val() === 'admin')",
+        ".write": "auth != null && ($uid === auth.uid || root.child('users').child(auth.uid).child('role').val() === 'admin')"
+      }
+    },
+    "doctors": {
+      ".read": "auth != null",
+      "$doctorUid": {
+        ".read": "auth != null",
+        ".write": "auth != null && ($doctorUid === auth.uid || root.child('users').child(auth.uid).child('role').val() === 'admin')"
+      }
+    },
+    "nurses": {
+      ".read": "auth != null",
+      "$nurseUid": {
+        ".read": "auth != null",
+        ".write": "auth != null && ($nurseUid === auth.uid || root.child('users').child(auth.uid).child('role').val() === 'admin')"
+      }
+    },
+    "labs": {
+      ".read": "auth != null",
+      "$labUid": {
+        ".read": "auth != null",
+        ".write": "auth != null && ($labUid === auth.uid || root.child('users').child(auth.uid).child('role').val() === 'admin')"
+      }
+    },
+    "bookings": {
+      ".read": "auth != null",
+      "$bookingId": {
+        ".read": "auth != null && (data.child('patientId').val() === auth.uid || data.child('providerId').val() === auth.uid || root.child('users').child(auth.uid).child('role').val() === 'admin')",
+        ".write": "auth != null && (data.child('patientId').val() === auth.uid || data.child('providerId').val() === auth.uid || root.child('users').child(auth.uid).child('role').val() === 'admin')"
+      }
+    },
+    "chats": {
+      ".read": "auth != null",
+      "$chatId": {
+        ".read": "auth != null && (data.child('patientId').val() === auth.uid || data.child('providerId').val() === auth.uid || root.child('users').child(auth.uid).child('role').val() === 'admin')",
+        ".write": "auth != null && (data.child('patientId').val() === auth.uid || data.child('providerId').val() === auth.uid || root.child('users').child(auth.uid).child('role').val() === 'admin')",
+        "messages": {
+          "$messageId": {
+            ".read": "auth != null && (data.parent().child('patientId').val() === auth.uid || data.parent().child('providerId').val() === auth.uid || root.child('users').child(auth.uid).child('role').val() === 'admin')",
+            ".write": "auth != null && (data.parent().child('patientId').val() === auth.uid || data.parent().child('providerId').val() === auth.uid || root.child('users').child(auth.uid).child('role').val() === 'admin')"
+          }
+        }
+      }
+    },
+    "mcqs": {
+      ".read": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin'",
+      ".write": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin'",
+      "results": {
+        ".read": "auth != null",
+        "$doctorUid": {
+          ".read": "auth != null && ($doctorUid === auth.uid || root.child('users').child(auth.uid).child('role').val() === 'admin')",
+          ".write": "auth != null && ($doctorUid === auth.uid || root.child('users').child(auth.uid).child('role').val() === 'admin')"
+        }
+      }
+    },
+    "settings": {
+      ".read": "auth != null",
+      ".write": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin'"
+    }
+  }
+}

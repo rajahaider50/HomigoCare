@@ -1,0 +1,47 @@
+# Flutter
+.packages
+.pub/
+build/
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+*.iml
+.idea/
+.vscode/
+*.lock
+*.apk
+*.aab
+*.ipa
+
+# Firebase (DO NOT commit)
+**/google-services.json
+**/GoogleService-Info.plist
+
+# Sensitive Files (DO NOT commit)
+**/client_secret*.json
+**/firebase-info.txt
+**/google-drive-info.txt
+**/key.properties
+**/*.jks
+**/*.keystore
+**/secrets.dart
+
+# Android
+android/.gradle/
+android/app/build/
+android/local.properties
+android/key.properties
+
+# iOS
+ios/Pods/
+ios/.symlinks/
+ios/Flutter/Flutter.framework
+ios/Flutter/Flutter.podspec
+
+# macOS
+macos/Pods/
+macos/Flutter/ephemeral/
+
+# Platform
+*.log
+.DS_Store
