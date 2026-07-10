@@ -20,8 +20,9 @@ jobs:
       - name: Generate Flutter project
         run: flutter create . --org com.homigocare --project-name homigo_care --platforms android
 
-      - name: Add Google Services to project build.gradle
+      - name: Configure google-services
         run: |
+          # Add classpath to project-level build.gradle
           python3 -c "
           content = open('android/build.gradle').read()
           if 'google-services' not in content:
@@ -30,34 +31,20 @@ jobs:
                   'classpath \"com.google.gms:google-services:4.4.0\"\n        classpath \"com.android.tools.build:gradle'
               )
               open('android/build.gradle', 'w').write(content)
-          print('Done: project build.gradle')
           "
 
-      - name: Add Google Services plugin to app build.gradle
-        run: |
-          python3 -c "
-          content = open('android/app/build.gradle').read()
-          if 'google-services' not in content:
-              content = content.replace(
-                  'id \"dev.flutter.flutter-gradle-plugin\"',
-                  'id \"dev.flutter.flutter-gradle-plugin\"\n    id \"com.google.gms.google-services\"'
-              )
-              open('android/app/build.gradle', 'w').write(content)
-          print('Done: app build.gradle')
-          "
+          # Add apply plugin at the end of app build.gradle
+          echo "apply plugin: 'com.google.gms.google-services'" >> android/app/build.gradle
 
-      - name: Set minSdk to 21
-        run: |
+          # Set minSdk to 21
           python3 -c "
           import re
           content = open('android/app/build.gradle').read()
           content = re.sub(r'minSdk\s*=\s*flutter\.minSdkVersion', 'minSdk = 21', content)
           open('android/app/build.gradle', 'w').write(content)
-          print('Done: minSdk set to 21')
           "
 
-      - name: Restore google-services.json
-        run: |
+          # Restore google-services.json
           cat > android/app/google-services.json << 'GSJSON'
           {
             "project_info": {
