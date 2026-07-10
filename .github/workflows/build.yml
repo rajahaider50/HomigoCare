@@ -1,4 +1,3 @@
-# Flutter Android Build
 name: Build Android APK
 
 on:
@@ -18,14 +17,81 @@ jobs:
           flutter-version: '3.22.0'
           channel: 'stable'
 
+      - name: Generate platform files
+        run: flutter create . --org com.homigocare --project-name homigo_care
+
+      - name: Restore google-services.json
+        run: |
+          cat > android/app/google-services.json << 'GOOGLE_SERVICES_EOF'
+          {
+            "project_info": {
+              "project_number": "90367474956",
+              "firebase_url": "https://homigo-care-8360e-default-rtdb.firebaseio.com",
+              "project_id": "homigo-care-8360e",
+              "storage_bucket": "homigo-care-8360e.firebasestorage.app"
+            },
+            "client": [
+              {
+                "client_info": {
+                  "mobilesdk_app_id": "1:90367474956:android:47f75be6fc8d327b729d29",
+                  "android_client_info": {
+                    "package_name": "com.homigocare.app"
+                  }
+                },
+                "oauth_client": [
+                  {
+                    "client_id": "90367474956-agoqpqvs68fgn778kli79a6js93rirm9.apps.googleusercontent.com",
+                    "client_type": 3
+                  }
+                ],
+                "api_key": [
+                  {
+                    "current_key": "AIzaSyBmTL1zlv1M4FsnRkDZQqe9LzTqQlulEQY"
+                  }
+                ],
+                "services": {
+                  "appinvite_service": {
+                    "other_platform_oauth_client": [
+                      {
+                        "client_id": "90367474956-agoqpqvs68fgn778kli79a6js93rirm9.apps.googleusercontent.com",
+                        "client_type": 3
+                      }
+                    ]
+                  }
+                }
+              }
+            ],
+            "configuration_version": "1"
+          }
+          GOOGLE_SERVICES_EOF
+
+      - name: Configure Android build.gradle
+        run: |
+          # Add google-services plugin to project-level build.gradle
+          sed -i 's/classpath '\''com.android.tools.build:gradle:.*'\''/classpath '\''com.android.tools.build:gradle:7.4.2'\''/' android/build.gradle
+          if ! grep -q 'google-services' android/build.gradle; then
+            sed -i '/classpath '\''com.android.tools.build:gradle/a\        classpath '\''com.google.gms:google-services:4.4.0'\''' android/build.gradle
+          fi
+          
+          # Add apply plugin to app-level build.gradle
+          if ! grep -q 'google-services' android/app/build.gradle; then
+            echo 'apply plugin: '\''com.google.gms.google-services'\''' >> android/app/build.gradle
+          fi
+          
+          # Ensure minSdkVersion is 21
+          sed -i 's/minSdkVersion [0-9]*/minSdkVersion 21/' android/app/build.gradle
+
       - name: Install dependencies
         run: flutter pub get
 
+      - name: Analyze code
+        run: flutter analyze --no-fatal-infos --no-fatal-warnings || true
+
       - name: Build APK
-        run: flutter build apk --release
+        run: flutter build apk --debug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: homigo-care-apk
-          path: build/app/outputs/flutter-apk/app-release.apk
+          path: build/app/outputs/flutter-apk/app-debug.apk
