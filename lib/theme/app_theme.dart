@@ -30,12 +30,14 @@ class AppTheme {
       ),
       scaffoldBackgroundColor: AppColors.background,
       textTheme: GoogleFonts.poppinsTextTheme(),
-      appBarTheme: GoogleFonts.poppinsTextTheme().copyWith(
+      appBarTheme: AppBarTheme(
         titleTextStyle: GoogleFonts.poppins(
           fontSize: 20,
           fontWeight: FontWeight.w600,
           color: AppColors.dark,
         ),
+        elevation: 0,
+        centerTitle: false,
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
