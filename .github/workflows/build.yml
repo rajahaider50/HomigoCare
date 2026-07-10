@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
@@ -20,73 +20,15 @@ jobs:
       - name: Generate Flutter project
         run: flutter create . --org com.homigocare --project-name homigo_care --platforms android
 
-      - name: Configure google-services
+      - name: Set minSdk to 21
         run: |
-          # Add classpath to project-level build.gradle
-          python3 -c "
-          content = open('android/build.gradle').read()
-          if 'google-services' not in content:
-              content = content.replace(
-                  'classpath \"com.android.tools.build:gradle',
-                  'classpath \"com.google.gms:google-services:4.4.0\"\n        classpath \"com.android.tools.build:gradle'
-              )
-              open('android/build.gradle', 'w').write(content)
-          "
-
-          # Add apply plugin at the end of app build.gradle
-          echo "apply plugin: 'com.google.gms.google-services'" >> android/app/build.gradle
-
-          # Set minSdk to 21
           python3 -c "
           import re
           content = open('android/app/build.gradle').read()
           content = re.sub(r'minSdk\s*=\s*flutter\.minSdkVersion', 'minSdk = 21', content)
           open('android/app/build.gradle', 'w').write(content)
+          print('Done: minSdk set to 21')
           "
-
-          # Restore google-services.json
-          cat > android/app/google-services.json << 'GSJSON'
-          {
-            "project_info": {
-              "project_number": "90367474956",
-              "firebase_url": "https://homigo-care-8360e-default-rtdb.firebaseio.com",
-              "project_id": "homigo-care-8360e",
-              "storage_bucket": "homigo-care-8360e.firebasestorage.app"
-            },
-            "client": [
-              {
-                "client_info": {
-                  "mobilesdk_app_id": "1:90367474956:android:47f75be6fc8d327b729d29",
-                  "android_client_info": {
-                    "package_name": "com.homigocare.app"
-                  }
-                },
-                "oauth_client": [
-                  {
-                    "client_id": "90367474956-agoqpqvs68fgn778kli79a6js93rirm9.apps.googleusercontent.com",
-                    "client_type": 3
-                  }
-                ],
-                "api_key": [
-                  {
-                    "current_key": "AIzaSyBmTL1zlv1M4FsnRkDZQqe9LzTqQlulEQY"
-                  }
-                ],
-                "services": {
-                  "appinvite_service": {
-                    "other_platform_oauth_client": [
-                      {
-                        "client_id": "90367474956-agoqpqvs68fgn778kli79a6js93rirm9.apps.googleusercontent.com",
-                        "client_type": 3
-                      }
-                    ]
-                  }
-                }
-              }
-            ],
-            "configuration_version": "1"
-          }
-          GSJSON
 
       - name: Install dependencies
         run: flutter pub get
