@@ -20,94 +20,8 @@ jobs:
       - name: Generate Flutter project
         run: flutter create . --org com.homigocare --project-name homigo_care --platforms android
 
-      - name: Configure Android project
+      - name: Configure google-services
         run: |
-          # Write project-level build.gradle
-          cat > android/build.gradle << 'EOF'
-          buildscript {
-              ext.kotlin_version = '1.9.10'
-              repositories {
-                  google()
-                  mavenCentral()
-              }
-              dependencies {
-                  classpath 'com.android.tools.build:gradle:7.4.2'
-                  classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
-                  classpath 'com.google.gms:google-services:4.4.0'
-              }
-          }
-
-          allprojects {
-              repositories {
-                  google()
-                  mavenCentral()
-              }
-          }
-
-          rootProject.buildDir = '../build'
-          subprojects {
-              project.buildDir = "${rootProject.buildDir}/${project.name}"
-          }
-          subprojects {
-              project.evaluationDependsOn(':app')
-          }
-
-          tasks.register("clean", Delete) {
-              delete rootProject.buildDir
-          }
-          EOF
-
-          # Write app-level build.gradle
-          cat > android/app/build.gradle << 'EOF'
-          plugins {
-              id "com.android.application"
-              id "kotlin-android"
-              id "dev.flutter.flutter-gradle-plugin"
-              id "com.google.gms.google-services"
-          }
-
-          android {
-              namespace "com.homigocare.app"
-              compileSdk flutter.compileSdkVersion
-              ndkVersion flutter.ndkVersion
-
-              compileOptions {
-                  sourceCompatibility JavaVersion.VERSION_1_8
-                  targetCompatibility JavaVersion.VERSION_1_8
-              }
-
-              kotlinOptions {
-                  jvmTarget = '1.8'
-              }
-
-              sourceSets {
-                  main.java.srcDirs += 'src/main/kotlin'
-              }
-
-              defaultConfig {
-                  applicationId "com.homigocare.app"
-                  minSdk 21
-                  targetSdk flutter.targetSdkVersion
-                  versionCode flutter.versionCode
-                  versionName flutter.versionName
-                  multiDexEnabled true
-              }
-
-              buildTypes {
-                  release {
-                      signingConfig signingConfigs.debug
-                  }
-              }
-          }
-
-          flutter {
-              source '../..'
-          }
-
-          dependencies {}
-          EOF
-
-          # Restore google-services.json
           cat > android/app/google-services.json << 'GSJSON'
           {
             "project_info": {
@@ -151,10 +65,16 @@ jobs:
           }
           GSJSON
 
-          # Fix settings.gradle for older Flutter
-          if [ -f android/settings.gradle ]; then
-            sed -i 's/id "com.android.application"/id "com.android.application" version "7.4.2"/' android/settings.gradle 2>/dev/null || true
-          fi
+      - name: Add google-services classpath
+        run: |
+          # Add google-services classpath to project build.gradle
+          sed -i '/dependencies {/a\        classpath '\''com.google.gms:google-services:4.4.0'\''' android/build.gradle
+
+          # Add google-services plugin to app build.gradle (before closing brace)
+          sed -i '/^android {/i\apply plugin: '\''com.google.gms.google-services'\''' android/app/build.gradle
+
+          # Make sure minSdkVersion is 21
+          sed -i 's/minSdk [0-9]*/minSdk 21/' android/app/build.gradle
 
       - name: Install dependencies
         run: flutter pub get
