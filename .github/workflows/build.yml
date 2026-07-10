@@ -20,7 +20,43 @@ jobs:
       - name: Generate Flutter project
         run: flutter create . --org com.homigocare --project-name homigo_care --platforms android
 
-      - name: Configure google-services
+      - name: Add Google Services to project build.gradle
+        run: |
+          python3 -c "
+          content = open('android/build.gradle').read()
+          if 'google-services' not in content:
+              content = content.replace(
+                  'classpath \"com.android.tools.build:gradle',
+                  'classpath \"com.google.gms:google-services:4.4.0\"\n        classpath \"com.android.tools.build:gradle'
+              )
+              open('android/build.gradle', 'w').write(content)
+          print('Done: project build.gradle')
+          "
+
+      - name: Add Google Services plugin to app build.gradle
+        run: |
+          python3 -c "
+          content = open('android/app/build.gradle').read()
+          if 'google-services' not in content:
+              content = content.replace(
+                  'id \"dev.flutter.flutter-gradle-plugin\"',
+                  'id \"dev.flutter.flutter-gradle-plugin\"\n    id \"com.google.gms.google-services\"'
+              )
+              open('android/app/build.gradle', 'w').write(content)
+          print('Done: app build.gradle')
+          "
+
+      - name: Set minSdk to 21
+        run: |
+          python3 -c "
+          import re
+          content = open('android/app/build.gradle').read()
+          content = re.sub(r'minSdk\s*=\s*flutter\.minSdkVersion', 'minSdk = 21', content)
+          open('android/app/build.gradle', 'w').write(content)
+          print('Done: minSdk set to 21')
+          "
+
+      - name: Restore google-services.json
         run: |
           cat > android/app/google-services.json << 'GSJSON'
           {
@@ -64,17 +100,6 @@ jobs:
             "configuration_version": "1"
           }
           GSJSON
-
-      - name: Add google-services classpath
-        run: |
-          # Add google-services classpath to project build.gradle
-          sed -i '/dependencies {/a\        classpath '\''com.google.gms:google-services:4.4.0'\''' android/build.gradle
-
-          # Add google-services plugin to app build.gradle (before closing brace)
-          sed -i '/^android {/i\apply plugin: '\''com.google.gms.google-services'\''' android/app/build.gradle
-
-          # Make sure minSdkVersion is 21
-          sed -i 's/minSdk [0-9]*/minSdk 21/' android/app/build.gradle
 
       - name: Install dependencies
         run: flutter pub get
